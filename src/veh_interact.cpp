@@ -2445,6 +2445,7 @@ void veh_interact::display_mode()
             { _( "rem<o>ve" ) },
             { _( "<s>iphon" ) },
             { _( "unloa<d>" ) },
+            { _( "<c>hange tire" ) },
             { _( "cre<w>" ) },
             { _( "r<e>name" ) },
             { _( "l<a>bel" ) },
