@@ -1,0 +1,54 @@
+name: create release
+
+on:
+  push:
+    branches:
+      - master
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: checkout repository
+      uses: actions/checkout@v1
+      with:
+        fetch-depth: 10
+    - name: install dependencies
+      run: |
+          sudo apt-get update
+          sudo apt-get install libncursesw5-dev libsdl2-dev libsdl2-ttf-dev libsdl2-image-dev \
+            libsdl2-mixer-dev libpulse-dev ccache gettext openjdk-8-jdk-headless
+    - name: install android sdk
+      run: |
+        mkdir -p ~/.local/share/
+        wget https://dl.google.com/android/repository/sdk-tools-linux-4333796.zip
+        unzip sdk-tools-linux-4333796.zip -d ~/.local/share/android
+        rm sdk-tools-linux-4333796.zip
+        ~/.local/share/android/tools/bin/sdkmanager --update
+        ~/.local/share/android/tools/bin/sdkmanager "tools" "platform-tools" "ndk-bundle"
+        ~/.local/share/android/tools/bin/sdkmanager --licenses
+    - name: building
+      run: |
+        cd android
+        ./gradlew assembleExperimentalRelease -Pj=4 -Pabi_arm_32=false -Poverride_version="${{ github.ref }}"
+    - name: create release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ github.ref }}
+        release_name: Release ${{ github.ref }}
+        draft: false
+        prerelease: false
+    - name: upload release assets
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./android/app/build/outputs/apk/experimental/release/cataclysmdda-${{ github.ref }}-experimental-arm64-v8a-release-unsigned.apk
+        asset_name: cataclysmdda-${{ github.ref }}-experimental-arm64-v8a-release-unsigned.apk
+        asset_content_type: application/zip
